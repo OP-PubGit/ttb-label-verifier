@@ -58,25 +58,25 @@ Perform the following checks and return valid JSON:
 """
 
 if mode == "Single Label Verification":
-    col1, col2 = st.columns([1, 1])
+    st.subheader("Single Label Verification Portal")
+    
+    # Create 3 columns: Left spacer, Center main content, Right spacer
+    _, center_col, _ = st.columns([1, 3, 1])
 
-    with col1:
-        st.subheader("1. Application Form Data")
+    with center_col:
+        st.markdown("### 1. Application Form Data")
         form_brand = st.text_input("Brand Name", value="OLD TOM DISTILLERY")
         form_class = st.text_input("Class/Type Designation", value="Kentucky Straight Bourbon Whiskey")
         form_abv = st.text_input("Alcohol Content (ABV)", value="45% Alc./Vol. (90 Proof)")
         form_net = st.text_input("Net Contents", value="750 mL")
 
-        st.subheader("2. Upload Label Artwork")
+        st.markdown("### 2. Upload Label Artwork")
         uploaded_file = st.file_uploader("Choose label image (PNG, JPG, JPEG)", type=["png", "jpg", "jpeg"])
 
-    with col2:
-        st.subheader("3. Verification Results")
         if uploaded_file is not None:
-            image = Image.open(uploaded_file)
-            st.image(image, caption="Submitted Label Artwork", use_container_width=True)
+            st.image(uploaded_file, caption="Submitted Label Artwork", use_container_width=True)
 
-            if st.button("Run AI Compliance Check (~2s)", type="primary"):
+            if st.button("Run AI Compliance Check (~2s)", type="primary", use_container_width=True):
                 with st.spinner("Analyzing label typography, layout, and statutory warnings..."):
                     try:
                         formatted_prompt = VERIFICATION_PROMPT.format(
@@ -88,7 +88,7 @@ if mode == "Single Label Verification":
 
                         response = client.models.generate_content(
                             model='gemini-3.8-flash',
-                            contents=[image, formatted_prompt],
+                            contents=[Image.open(uploaded_file), formatted_prompt],
                             config=types.GenerateContentConfig(
                                 response_mime_type="application/json"
                             )
@@ -96,6 +96,9 @@ if mode == "Single Label Verification":
 
                         result = json.loads(response.text)
 
+                        st.markdown("---")
+                        st.markdown("### 3. Verification Results")
+                        
                         # Display Results clearly for agents
                         status = result.get("overall_status", "FLAGGED")
                         if status == "APPROVED":
@@ -120,8 +123,7 @@ if mode == "Single Label Verification":
                     except Exception as e:
                         st.error(f"Error processing image with AI model: {e}")
         else:
-            st.info("Please upload a label image on the left to begin verification.")
-
+            st.info("Please upload a label image above to begin verification.")
 else:
     st.subheader("Batch Upload Queue (Importers)")
     st.markdown("Upload multiple label images simultaneously to process peak-season backlogs.")
